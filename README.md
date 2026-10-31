@@ -104,10 +104,16 @@ reversible on the star.
 ./run_all.sh
 ```
 
-This checks the star's sha256, builds the gate includes from the repository
-source, makes `star.trits`, compiles and runs both gate sets, runs the outer
-network, writes `results/SHA256SUMS`, and redraws the figures if numpy, scipy
-and matplotlib are present. It needs g++ (C++17) and python3.
+This checks the star's sha256 and builds the gate includes from the repository
+source. It then makes `star.trits`, compiles and runs both gate sets, and runs the
+outer network, all into `replay/`. Finally it checks every replayed file against
+the committed `results/SHA256SUMS`; `results/` itself is never rewritten. It needs
+g++ (C++17) and python3.
+
+The CI workflow [`replay.yml`](.github/workflows/replay.yml) runs the same replay
+on every push. `SEAL=1 ./run_all.sh` writes a new baseline into `results/`. The
+figures are drawn by `src/draw_star.py` and `src/draw_net.py`, which need numpy,
+scipy and matplotlib.
 
 | Path | Contents |
 |---|---|
