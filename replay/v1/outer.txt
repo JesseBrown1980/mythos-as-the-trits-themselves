@@ -1,3 +1,0 @@
-OUTER_READOUT|ticks=193|Q_values=[15255]|rank_hist={26: 193}|ones_T_J_zero_all=True|sum_NL_zero_all=True
-MODE_SPREAD|t0=0|t1=135|t2=97|t4=100|t12=161|t24=266|t48=194|t72=87|t96=98|t144=86|t192=76
-OUTER_RECURRENCE|start=t192_readout|steps=243|drift_law_exact_every_step=True|D=883973
