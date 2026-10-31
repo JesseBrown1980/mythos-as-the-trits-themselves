@@ -1,0 +1,14 @@
+STAR|gguf_bytes=50752|gguf_sha256=3dd92a42160a38c121980957ce9eabbea216678892801d7ea3ed4e99e96c3aae|gguf_version=3|tensors=6|bytes_accounted=50752|cells=12288|t0=11763|t1=485|t2=40|trit_sum=565|trits_sha256=748ebf67136c3c1c4e344f22dbe2b1ce600cc480900c2c74ca3a6468fccbe0ee|json=0
+LATTICE|dims=64x64x3|cells=12288|trits=331776|star_copies=27|mass=15255|mass_eq_27x_star=1|px=0|py=0|pz=0|e2=30510|json=0
+GATES|set=tg|count=288|fix_code40=288|table_sha256=a7fca71ac8a85fd3acbe4188e9c246e98e4beeeaa459f3e77d40c0342aa4bb12|json=0
+RUN|set=tg|mode=free|ticks=192|conservation_exact_every_tick=1|aligned_at_t1=331776|slots=331776|returns_to_start_at=192|json=0
+RUN|set=tg|mode=gates|ticks=192|conservation_exact_every_tick=1|aligned_at_t1=325821|slots=331776|returns_to_start_at=none|json=0
+REVERSE|set=tg|steps=72|slots_differing_at_t72=27193|every_star_trit_restored=1|json=0
+NULL|set=tg|uniform_unchanged_after_72=1|json=0
+OUTER|set=tg|readouts=193|Q_values=15255|rank_hist=26:193|ones_T_J_zero_all=1|sum_NL_zero_all=1|spread_t1=143|spread_max=257|spread_max_at_t=21|spread_t192=64|D_mod_P=883973|drift_law_243_steps_from_t192=1|json=0
+GATES|set=v1|count=288|fix_code40=0|table_sha256=bd689114406588ac2f013b4a1cff3def5e6c55ddc084fe27d30335ccede505f5|json=0
+RUN|set=v1|mode=free|ticks=192|conservation_exact_every_tick=1|aligned_at_t1=331776|slots=331776|returns_to_start_at=192|json=0
+RUN|set=v1|mode=gates|ticks=192|conservation_exact_every_tick=1|aligned_at_t1=325733|slots=331776|returns_to_start_at=none|json=0
+REVERSE|set=v1|steps=72|slots_differing_at_t72=27260|every_star_trit_restored=1|json=0
+NULL|set=v1|uniform_unchanged_after_72=0|json=0
+OUTER|set=v1|readouts=193|Q_values=15255|rank_hist=26:193|ones_T_J_zero_all=1|sum_NL_zero_all=1|spread_t1=135|spread_max=266|spread_max_at_t=24|spread_t192=76|D_mod_P=883973|drift_law_243_steps_from_t192=1|json=0

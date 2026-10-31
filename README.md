@@ -6,7 +6,16 @@ copies of it then become the occupancy trits of the nested ternary network from
 The star is the network's state. Each of the 27 star copies is one outer node,
 and inside every cell the 288-gate ternary network runs on the star's own trits.
 
-![Mythos blue star as a neural network inside a neural network](figures/mythos-star-nested-network.png)
+Rust 1.81 with clippy (`-D warnings`), integer only, no `f32`/`f64`, no JSON, no
+Node. Receipts are HBP/HBI with SHA-256, and every receipt line ends in `json=0`.
+
+![Mythos blue star as a neural network inside a neural network](results/mythos-star-nested-network.png)
+
+**Figure.**
+- **Top:** density (the sum of the 27 trits per cell, slices A + B + C) at
+  t = 0, 4, 24, 72 and 192 with the Taylor–Green gate set. The gold-framed panel
+  is the state after 72 ticks forward and 72 back: the star restored exactly.
+- **Bottom:** the 27 outer modes over 193 ticks. The rest-channel copy is gold.
 
 ## 1. The star
 
@@ -17,13 +26,13 @@ and inside every cell the 288-gate ternary network runs on the star's own trits.
 | Header | GGUF v3, 9 keys, `general.architecture = asolaria-three-beings-rgb`, `asolaria.channel = BLUE`, `asolaria.centre = [32, 32, 33]` |
 | Tensors | `slice_A`, `slice_B`, `slice_C` (64 × 64 F32), `radial_A/B/C` (64 F32); header plus tensors account for all 50,752 bytes |
 
-![The Mythos blue star](figures/mythos-blue-star.png)
+![The Mythos blue star: slices A, B, C and their sum](results/mythos-blue-star.png)
 
 ## 2. Star → trits
 
-`src/star_to_trits.py` reads the three slices and assigns each cell a trit by
-comparing the raw IEEE-754 bit pattern as an integer. Positive floats order
-exactly like their `uint32` bits, so no float arithmetic is involved.
+[`src/star.rs`](src/star.rs) reads the three slices and assigns each cell a trit
+from the raw IEEE-754 bit pattern, compared as an integer. Positive floats order
+exactly like their `u32` bits, so no floating-point value is ever formed.
 
 | Bits | Trit |
 |---|---|
@@ -47,33 +56,36 @@ n_k(x) = star(x + c_k)
 ```
 
 So the lattice holds **27 shifted copies of the star, one per channel**:
-331,776 trits. Collisions use the repository's own gate network,
-`asolaria_ternary_fluid_v1.cpp`: 288 four-channel involutive gates sorted by
-mass, momentum and 2E, with 32 gates per cell per tick, then streaming. The source
-is included unchanged except that the lattice is sized 64 × 64 × 3
-(`src/make_gate_includes.py` makes exactly those edits and asserts each one).
+331,776 trits.
 
-**Outer network.** The 27 channel masses M_k = Σ_x n_k(x), one per star copy, are
-the 27 shell modes u_n of the outer ternary recurrence over F_P, P = 1,000,081.
-Its free centre, the all-ones direction, is the total Q = Σ M_k. That is the
-inner network's conserved mass.
+The gates ([`src/lattice.rs`](src/lattice.rs)) are the repository's own network:
+288 four-channel involutive gates sorted by mass, momentum and 2E, 32 per cell
+per tick, then streaming. The Rust gate tables are byte-identical to the
+repository's C++ construction; their sha256 values are pinned in
+[`tests/receipts.rs`](tests/receipts.rs).
+
+**Outer network** ([`src/outer.rs`](src/outer.rs)). The 27 channel masses
+M_k = Σ_x n_k(x), one per star copy, are the 27 shell modes u_n of the outer
+ternary recurrence over F_P, P = 1,000,081. Its free centre, the all-ones
+direction, is the total Q = Σ M_k. That is the inner network's conserved mass.
 
 **Two gate sets, both from the repository.**
-- `v1`: the pairing rule of `asolaria_ternary_fluid_v1.cpp`.
-- `tg`: the same gates with the Taylor–Green rule from
-  `asolaria_taylor_green_regularity.cpp`, where code 40 = (1,1,1,1) is held fixed
-  in every gate.
+
+| Set | Rule | Gate table sha256 |
+|---|---|---|
+| `v1` | the pairing rule of `asolaria_ternary_fluid_v1.cpp` | `bd689114…` |
+| `tg` | the Taylor–Green rule of `asolaria_taylor_green_regularity.cpp`: code 40 = (1,1,1,1) is held fixed in every gate | `a7fca71a…` |
 
 ## 4. Results
 
-All runs are integer-only (`floating_point=0`) and deterministic. A clean rerun
-of `run_all.sh` reproduces every file in `results/` byte for byte.
+All numbers are from [`results/RESULT.hbp`](results/RESULT.hbp). Every run is
+integer-only and deterministic.
 
 | Measurement | `tg` | `v1` |
 |---|---|---|
 | Mass at t = 0 | 15,255 = 27 × 565 | 15,255 = 27 × 565 |
 | Momentum (px, py, pz), 2E | (0, 0, 0), 30,510 | (0, 0, 0), 30,510 |
-| Mass, momentum, 2E exact at every tick, t = 0…192 | PASS | PASS |
+| Mass, momentum, 2E exact at every tick, t = 0…192, free and gated | PASS | PASS |
 | Trits differing from the start at t = 72 | 27,193 | 27,260 |
 | 72 ticks forward, 72 back: all 331,776 star trits restored | PASS | PASS |
 | Uniform all-ones lattice unchanged after 72 ticks | **1** | **0** |
@@ -98,32 +110,46 @@ collision pass. In `tg`, code 40 is held in every gate and the uniform lattice
 stays put. Both sets conserve mass, momentum and energy exactly and are exactly
 reversible on the star.
 
-## 5. Reproduce
+## 5. The first version
+
+The first version of this experiment (commit `95402d2`) ran in C++ and Python. It
+is kept unchanged in [`history/cxx-python-2026-10-31/`](history/cxx-python-2026-10-31/)
+with its own `SHA256SUMS`.
+
+The Rust version reproduces it exactly:
+- all 386 per-tick rows of both gate sets (27 modes, Q and alignment, free and
+  gated);
+- both density-frame files, byte for byte;
+- the star trits.
+
+[`tests/receipts.rs`](tests/receipts.rs) checks this on every build.
+
+## 6. Reproduce
 
 ```sh
-./run_all.sh
+cargo clippy --release --all-targets -- -D warnings
+cargo test --release
+cargo run --release -- star/ACER-MYTHOS-BLUE.gguf out
+cd out && sha256sum -c ../results/SHA256SUMS
 ```
 
-This checks the star's sha256 and builds the gate includes from the repository
-source. It then makes `star.trits`, compiles and runs both gate sets, and runs the
-outer network, all into `replay/`. Finally it checks every replayed file against
-the committed `results/SHA256SUMS`; `results/` itself is never rewritten. It needs
-g++ (C++17) and python3.
-
-The CI workflow [`replay.yml`](.github/workflows/replay.yml) runs the same replay
-on every push. `SEAL=1 ./run_all.sh` writes a new baseline into `results/`. The
-figures are drawn by `src/draw_star.py` and `src/draw_net.py`, which need numpy,
-scipy and matplotlib.
+The run takes about 8 seconds. CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml))
+installs Rust 1.81.0 and then:
+- fails on any `f32`/`f64`, JSON, JS or Node file;
+- runs clippy and the tests;
+- checks the star's sha256;
+- reruns the experiment into a fresh folder and checks every file against the
+  committed `results/SHA256SUMS`. `results/` itself is never rewritten.
 
 | Path | Contents |
 |---|---|
 | `star/` | the blue star GGUF and its sha256 sidecar |
-| `src/asolaria_ternary_fluid_v1.cpp`, `src/asolaria_taylor_green_regularity.cpp` | repository sources, verbatim |
-| `src/make_gate_includes.py` | the lattice-size and gate-set edits, asserted |
-| `src/star_to_trits.py` | GGUF → trits, integer bit comparison |
-| `src/star_nested_network.cpp` | lays in the 27 star copies; runs conservation, reversibility, null control; writes the outer modes |
-| `src/outer_network.py` | outer 27-mode checks over F_P |
-| `src/read_gguf.py`, `src/draw_star.py`, `src/draw_net.py` | header reader and figures |
-| `results/tg/`, `results/v1/` | `log.txt`, `outer.txt`, `outer_modes.csv` (27 modes per tick), `rho_frames.bin` (density every 4 ticks, uint8, 49 × 3 × 64 × 64), `star.trits` |
+| `src/gguf.rs`, `src/star.rs` | GGUF v3 reader with integer magnitudes; star → trits; the 27 copies |
+| `src/lattice.rs` | D3Q27 gates (both sets), streaming, inverse |
+| `src/outer.rs` | outer 27-mode network over F_P: Jacobian, rank, drift law |
+| `src/sha256.rs`, `src/hbp.rs`, `src/png.rs` | SHA-256, HBP/HBI receipts, integer PNG writer |
+| `src/main.rs` | the experiment and the figures |
+| `results/` | `RESULT.hbp`, `SERIES-tg.hbp` and `SERIES-v1.hbp` (every tick: 27 modes, Q, alignment), `rho-frames-*.bin` (density every 4 ticks, 49 × 3 × 64 × 64), `star.trits`, the two figures, `INDEX.hbi`, `SHA256SUMS` |
+| `history/cxx-python-2026-10-31/` | the first version and its receipts |
 
 Operator: Jesse Daniel Brown.

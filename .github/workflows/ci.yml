@@ -1,0 +1,26 @@
+name: ci
+on: [push, pull_request]
+jobs:
+  rust-181:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust 1.81 with clippy
+        run: |
+          rustup toolchain install 1.81.0 --profile minimal --component clippy,rustfmt
+          rustup override set 1.81.0
+          rustc --version
+      - name: no float, no json, no node
+        run: |
+          ! grep -rnE '\bf(32|64)\b' src tests
+          ! git ls-files | grep -iE '\.(json|js|mjs|ts)$|package\.json'
+      - name: clippy
+        run: cargo clippy --release --all-targets -- -D warnings
+      - name: star input
+        run: cd star && sha256sum -c ACER-MYTHOS-BLUE.gguf.sha256
+      - name: tests (receipts against the C++/Python history, tick for tick)
+        run: cargo test --release
+      - name: replay reproduces the committed receipts
+        run: |
+          cargo run --release -- star/ACER-MYTHOS-BLUE.gguf out
+          cd out && sha256sum -c ../results/SHA256SUMS
